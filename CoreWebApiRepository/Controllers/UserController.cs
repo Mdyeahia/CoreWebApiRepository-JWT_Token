@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace CoreWebApiRepository.Controllers
@@ -28,6 +29,7 @@ namespace CoreWebApiRepository.Controllers
         {
             try
             {
+                model.Password = Passhashing(model.Password);
                 model = await _oUserRepository.Save(model);
                 return Ok(model);
             }
@@ -44,7 +46,7 @@ namespace CoreWebApiRepository.Controllers
             {
                 User model = new User();
                 model.UserName = username;
-                model.Password = password;
+                model.Password = Passhashing(password);
 
                 var user = await _oUserRepository.GetByUsernamePassword(model);
                 if(user.UserId==0)return StatusCode((int)HttpStatusCode.NotFound,"Invalid User");
@@ -69,6 +71,20 @@ namespace CoreWebApiRepository.Controllers
                 ,signingCredentials:credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+        public static string Passhashing(string str)
+        {
+            MD5 md5 = new MD5CryptoServiceProvider();
+            byte[] fromData = Encoding.UTF8.GetBytes(str);
+            byte[] targetData = md5.ComputeHash(fromData);
+            string byte2String = null;
+
+            for (int i = 0; i < targetData.Length; i++)
+            {
+                byte2String += targetData[i].ToString("x2");
+
+            }
+            return byte2String;
         }
     }
 }
